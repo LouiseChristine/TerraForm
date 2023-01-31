@@ -80,11 +80,13 @@ resource "aws_key_pair" "key_pair" {
 }
 
 resource "aws_instance" "dev-instance" {
-  instance_type = "t2.micro"
-  ami           = data / aws_ami.ami.id
+  instance_type          = "t2.micro"
+  ami                    = data / aws_ami.ami.id
   key_name               = aws_key_pair.mykey.id
   vpc_security_group_ids = [aws_security_group.security_group.id]
   subnet_id              = aws_subnet.subnet.id
+
+  user_data = file("userdata.tpl")
 
   root_block_device {
     volume_size = 10
@@ -93,4 +95,15 @@ resource "aws_instance" "dev-instance" {
   tags = {
     Name = "dev-node"
   }
+}
+
+provider "local-exec" {
+  Name = templatefile("windows-ssh-config.tpl",{
+    hostname = self.cidr_block,
+    user = "ubuntu",
+    identityfile = "~/.ssh/main"
+
+  })
+
+
 }
